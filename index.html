@@ -114,7 +114,7 @@ return `<div class="glass"><h2>💰 Mi plan de salario</h2><p class="mut">Distri
 }
 
 function home(){const l=mtx(),i=sum(l,'i'),g=sum(l,'g'),h=hormiga(l),hs=h.reduce((s,x)=>s+x.s,0),dm=S.tx.some(t=>t.demo)||S.goals.some(x=>x.demo);
-return`<div class="top"><div class="brand-block"><img class="brand-logo" src="mio-logo.png" alt="MIO · Tus finanzas, tu control"><div class="slogan">Tus finanzas, tu control</div></div><button class="ib" onclick="eye()" aria-label="Ocultar valores">${S.hide?'🙈':'👁️'}</button></div>
+return`<div class="top"><div><div class="logo">MIO</div><div class="slogan">Tus finanzas, tu control</div></div><button class="ib" onclick="eye()" aria-label="Ocultar valores">${S.hide?'🙈':'👁️'}</button></div>
 ${dm?`<div class="glass demo"><div class="grow"><b>Datos de demostración</b><br>Son ejemplos, no tus finanzas.</div><button class="btn s sm" onclick="clearDemo()">Borrar demo</button></div>`:''}
 ${mnav()}
 <div class="glass hero"><div class="l">Balance del mes</div><div class="big">${cop(i-g)}</div><div class="pills"><div class="pill"><small>↑ Ingresos</small><b>${cop(i)}</b></div><div class="pill"><small>↓ Gastos</small><b>${cop(g)}</b></div></div></div>
