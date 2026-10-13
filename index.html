@@ -158,7 +158,7 @@ sheet(`<h2>${e?'Editar movimiento':'Nuevo movimiento'}</h2><div class="seg"><but
 <button class="btn" onclick="saveTx()">${e?'Guardar cambios':'Guardar movimiento'}</button>
 ${e?'<button class="btn d" style="margin-top:10px" onclick="delTx()">Eliminar</button>':''}<button class="btn s" style="margin-top:10px" onclick="cl()">Cancelar</button>`)}
 function sw(t){const k={a:num('#fa'),n:$('#fn').value,d:$('#fd').value};tt=t;txForm();$('#fa').value=k.a?new Intl.NumberFormat('es-CO').format(k.a):'';$('#fn').value=k.n;$('#fd').value=k.d}
-function saveTx(){const a=num('#fa'),d=$('#fd').value;if(!Number.isSafeInteger(a)||a<=0||a>1000000000000){toast('Ingresa un valor entre $1 y $1.000.000.000.000 COP');return}if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d)||Number.isNaN(Date.parse(d+'T12:00:00'))){toast('Elige una fecha válida');return}
+function saveTx(){const a=num('#fa'),d=$('#fd').value;if(!Number.isSafeInteger(a)||a<=0||a>1000000000000){toast('Ingresa un valor entre $1 y $1.000.000.000.000 COP');return}if(!d||Number.isNaN(Date.parse(d+'T12:00:00'))){toast('Elige una fecha válida');return}
 const o={t:tt,c:$('#fc').value,a,n:$('#fn').value.trim().slice(0,40),d};
 if(ed){Object.assign(ed,o,{demo:false})}else S.tx.push({id:uid(),...o});
 const[y,m]=d.split('-');M={y:+y,m:+m-1};save();cl();render();toast(ed?'Cambios guardados':'Movimiento guardado')}
