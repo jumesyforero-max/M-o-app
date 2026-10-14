@@ -81,6 +81,30 @@ input.big{font-size:28px;font-weight:800;min-height:62px}
 .toast{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:14px;z-index:99}
 .empty{text-align:center;color:var(--mut);padding:18px 0}
 .warn{color:var(--amb)}
+
+/* MÍO: controles Liquid Glass, neutros hasta que el usuario los active */
+.btn,.btn.s,.seg button,.ib,.mn button,.tabs button:not(.fab),.profile-chevron{
+  background:rgba(255,255,255,.34)!important;color:var(--tx)!important;
+  border:1px solid rgba(255,255,255,.72)!important;
+  backdrop-filter:blur(22px) saturate(1.65)!important;-webkit-backdrop-filter:blur(22px) saturate(1.65)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 4px 14px rgba(8,124,240,.08)!important;
+  transition:background .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease;
+}
+.btn:active,.btn.s:active,.seg button:active,.ib:active,.mn button:active,.tabs button:not(.fab):active,
+.btn.selected,.seg button.on,.tabs button.on{
+  background:linear-gradient(135deg,var(--g),var(--t) 55%,var(--b))!important;color:#fff!important;
+  border-color:rgba(255,255,255,.8)!important;box-shadow:0 5px 16px rgba(8,124,240,.2)!important;
+}
+.btn.d{background:rgba(239,68,68,.12)!important;color:#b91c1c!important;border-color:rgba(239,68,68,.28)!important}
+.btn.d:active{background:var(--red)!important;color:#fff!important}
+.tabs{left:50%!important;right:auto!important;transform:translateX(-50%)!important;justify-content:center!important;gap:4px!important;width:min(448px,calc(100% - 24px))!important}
+.tabs button{flex:1 1 0!important;min-width:0!important;align-items:center!important;justify-content:center!important;text-align:center!important;padding:4px 0!important}
+.tabs .fab{flex:0 0 58px!important;width:58px!important;background:linear-gradient(135deg,var(--g),var(--t) 55%,var(--b))!important;color:#fff!important}
+.mn{display:grid!important;grid-template-columns:44px minmax(0,1fr) 44px!important;align-items:center!important;justify-content:initial!important;gap:10px!important}
+.mn b{text-align:center!important;min-width:0!important}
+.mn button{justify-self:center!important;background:rgba(255,255,255,.72)!important;color:var(--tx)!important}
+@media(hover:hover){.btn:hover,.btn.s:hover,.seg button:hover,.ib:hover,.mn button:hover{background:rgba(255,255,255,.62)!important;color:var(--tx)!important}}
+
 </style></head>
 <body><div class="bg"></div>
 <noscript><div style="position:relative;z-index:2;margin:16px;padding:16px;border-radius:20px;background:#fff;color:#0b2540;font:15px -apple-system,sans-serif"><b>Vista previa sin JavaScript.</b> Este visor no ejecuta la app: los botones no funcionan aquí. Abre el archivo en <b>Safari</b> (Compartir → Abrir en Safari) o usa el enlace publicado.</div></noscript>
@@ -131,6 +155,16 @@ function donut(l){const c=byCat(l),tot=c.reduce((s,x)=>s+x[1],0);if(!tot)return'
 let off=25,arcs='';c.forEach(([k,v])=>{const p=v/tot*100;arcs+=`<circle r="15.9155" cx="21" cy="21" fill="none" stroke="${catInfo(k)[1]}" stroke-width="6" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${off}"/>`;off-=p});
 return`<svg viewBox="0 0 42 42" style="width:200px;display:block;margin:0 auto 8px"><circle r="15.9155" cx="21" cy="21" fill="none" stroke="var(--in)" stroke-width="6"/>${arcs}<text x="21" y="20" text-anchor="middle" font-size="3" fill="var(--mut)">Gastos</text><text x="21" y="25" text-anchor="middle" font-size="3.6" font-weight="800" fill="var(--tx)">${S.hide?'••••':new Intl.NumberFormat('es-CO',{notation:'compact',maximumFractionDigits:1}).format(tot)}</text></svg>`+c.map(([k,v])=>`<div class="leg"><i style="background:${C[k][1]}"></i><span class="grow">${C[k][0]} ${k}</span><b>${S.hide?'••':Math.round(v/tot*100)+'%'}</b><span class="mut" style="min-width:92px;text-align:right">${cop(v)}</span></div>`).join('')}
 
+function inferPlanGroup(t){
+ const explicit=String(t?.planGroup||'').toLowerCase();
+ if(['needs','wants','savings','debts'].includes(explicit))return explicit;
+ const raw=[t?.planComponent,t?.planSubcategory,t?.c,t?.n].filter(Boolean).join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ if(/ahorro|fondo|inversion|meta de ahorro|deposito ahorro/.test(raw))return 'savings';
+ if(/deuda|prestamo|credito|tarjeta|banco|cuota|acreedor|arriendo pendiente|pago de deuda/.test(raw))return 'debts';
+ if(/ocio|entretenimiento|cine|restaurante|domicilio|suscripcion|viaje|paseo|juego|fiesta|regalo|compras personales|cafeteria/.test(raw))return 'wants';
+ if(/arriendo|vivienda|mercado|alimentacion|servicio|agua|energia|gas|transporte|salud|medicamento|educacion|matricula|familia|higiene|aseo|internet|celular|seguro/.test(raw))return 'needs';
+ return '';
+}
 function salaryCard(){
  if(!S.salaryPlan)return '<div class="glass"><h2>💰 Mi plan de salario</h2><p class="mut">Cuando registres un ingreso de categoría Salario, podrás solicitar una sugerencia de distribución. Las categorías y subcategorías aparecerán como ayuda opcional al registrar un gasto.</p></div>';
  const p=S.salaryPlan,month=String(p.date||new Date().toISOString().slice(0,10)).slice(0,7),txMonth=S.tx.filter(t=>t.t==='g'&&String(t.d||'').slice(0,7)===month),groups=[
@@ -139,8 +173,8 @@ function salaryCard(){
   {key:'savings',label:'🌱 Ahorros',pct:p.savingsPct??10,amount:p.savings??Math.round(p.amount*(p.savingsPct??10)/100)},
   {key:'debts',label:'💳 Pago de deudas',pct:p.debtsPct??10,amount:p.debts??Math.round(p.amount*(p.debtsPct??10)/100)}
  ];
- const progress=groups.map(g=>{const paid=txMonth.filter(t=>t.planGroup===g.key).reduce((a,t)=>a+(Number(t.a)||0),0),pct=g.amount?Math.min(100,paid/g.amount*100):0,breakdown=p.splitBreakdowns?.[g.key]||{},subRows=Object.entries(breakdown).map(([name,share])=>{const target=Math.round(g.amount*Number(share||0)/100),spent=txMonth.filter(t=>t.planGroup===g.key&&t.planComponent===name).reduce((a,t)=>a+(Number(t.a)||0),0),sp=target?Math.min(100,spent/target*100):0;return `<div style="padding:7px 0 5px 12px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><span>${esc(name)}</span><span style="white-space:nowrap">${cop(spent)} / ${cop(target)}</span></div><div class="bar" style="height:6px;margin-top:5px"><i style="width:${sp}%;background:var(--t)"></i></div><small class="mut">${Math.round(sp)}% registrado${target>spent?' · falta '+cop(target-spent):''}</small></div>`}).join('');return `<div style="padding:10px 0;border-bottom:1px solid var(--st)"><div style="display:flex;justify-content:space-between;gap:8px"><b>${g.label}</b><b style="white-space:nowrap">${Math.round(pct)}%</b></div><div class="bar" style="height:9px;margin:7px 0"><i style="width:${pct}%;background:${pct>=100?'var(--g)':'var(--t)'}"></i></div><div class="mut" style="font-size:12px">Registrado: ${cop(paid)} de ${cop(g.amount)} · ${paid>=g.amount?'Meta cubierta':'Faltan '+cop(g.amount-paid)}</div>${subRows?`<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:700">Ver avance por componente</summary>${subRows}</details>`:''}</div>`}).join('');
- return `<div class="glass"><h2>💰 Mi plan de salario</h2><p class="mut">Distribución guardada para ${dlabel(p.date)} · ${cop(p.amount)}. El avance se calcula con los gastos registrados y clasificados con el grupo del plan, en el mismo mes del salario.</p>${groups.map(g=>`<div class="row" style="cursor:default"><div class="grow"><b>${g.label}</b><small>${g.pct}% del salario</small></div><div style="text-align:right"><b>${cop(g.amount)}</b></div></div>`).join('')}<button class="btn s" style="margin-top:10px" onclick="salaryPlan(${p.amount},'${p.date}')">Ajustar distribución</button></div><div class="glass"><h2>📈 Avance de tu distribución</h2><p class="mut">Periodo: ${month}. Para que un gasto cuente aquí, selecciónale el grupo, componente y subcategoría al registrarlo.</p>${progress}<small class="mut">Las barras reflejan movimientos clasificados en MÍO; no significan que un pago esté confirmado por un banco o acreedor.</small></div>`;
+ const progress=groups.map(g=>{const paid=txMonth.filter(t=>inferPlanGroup(t)===g.key).reduce((a,t)=>a+(Number(t.a)||0),0),pct=g.amount?Math.min(100,paid/g.amount*100):0,breakdown=p.splitBreakdowns?.[g.key]||{},subRows=Object.entries(breakdown).map(([name,share])=>{const target=Math.round(g.amount*Number(share||0)/100),spent=txMonth.filter(t=>inferPlanGroup(t)===g.key&&String(t.planComponent||'')===name).reduce((a,t)=>a+(Number(t.a)||0),0),sp=target?Math.min(100,spent/target*100):0;return `<div style="padding:7px 0 5px 12px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><span>${esc(name)}</span><span style="white-space:nowrap">${cop(spent)} / ${cop(target)}</span></div><div class="bar" style="height:6px;margin-top:5px"><i style="width:${sp}%;background:var(--t)"></i></div><small class="mut">${Math.round(sp)}% registrado${target>spent?' · falta '+cop(target-spent):''}</small></div>`}).join('');return `<div style="padding:10px 0;border-bottom:1px solid var(--st)"><div style="display:flex;justify-content:space-between;gap:8px"><b>${g.label}</b><b style="white-space:nowrap">${Math.round(pct)}%</b></div><div class="bar" style="height:9px;margin:7px 0"><i style="width:${pct}%;background:${pct>=100?'var(--g)':'var(--t)'}"></i></div><div class="mut" style="font-size:12px">Registrado: ${cop(paid)} de ${cop(g.amount)} · ${paid>=g.amount?'Meta cubierta':'Faltan '+cop(g.amount-paid)}</div>${subRows?`<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:700">Ver avance por componente</summary>${subRows}</details>`:''}</div>`}).join('');
+ return `<div class="glass"><h2>💰 Mi plan de salario</h2><p class="mut">Distribución guardada para ${dlabel(p.date)} · ${cop(p.amount)}. El avance se calcula con los gastos registrados y clasificados con el grupo del plan, en el mismo mes del salario.</p>${groups.map(g=>`<div class="row" style="cursor:default"><div class="grow"><b>${g.label}</b><small>${g.pct}% del salario</small></div><div style="text-align:right"><b>${cop(g.amount)}</b></div></div>`).join('')}<button class="btn s" style="margin-top:10px" onclick="salaryPlan(${p.amount},'${p.date}')">Ajustar distribución</button></div><div class="glass"><h2>📈 Avance de tu distribución</h2><p class="mut">Periodo: ${month}. Los movimientos clasificados cuentan automáticamente. Si un movimiento no tiene grupo guardado, MÍO intenta reconocerlo por su categoría y nota; para mayor precisión, selecciona el grupo al registrarlo.</p>${progress}<small class="mut">Las barras reflejan movimientos clasificados en MÍO; no significan que un pago esté confirmado por un banco o acreedor.</small></div>`;
 }
 function home(){const l=mtx(),i=sum(l,'i'),g=sum(l,'g'),h=hormiga(l),hs=h.reduce((s,x)=>s+x.s,0),dm=S.tx.some(t=>t.demo)||S.goals.some(x=>x.demo);
 return`<div class="top"><div><div class="logo">MIO</div><div class="slogan">Tus finanzas, tu control</div></div><button class="profile-top-btn" onclick="profileInfo()" aria-label="Ver mi perfil" title="Mi perfil">👤</button></div>
