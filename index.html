@@ -206,6 +206,21 @@ hr,.divider{border-color:#DADADA!important}
 /* estado positivo/negativo solo como acento puntual */
 .positive,.success,.income,.gain{color:#20BD8A!important}.negative,.error,.loss{color:#F04444!important}
 
+
+/* FIX DEFINITIVO: ocultar navegación y accesos flotantes en cualquier pantalla de autenticación */
+body.auth-mode #tabs,
+body.auth-mode nav#tabs,
+body.auth-mode .tabs,
+body.auth-mode .search-dock,
+body.auth-mode .search-toggle,
+body.auth-mode #searchDock,
+body.auth-mode #mioSearchDock,
+body.auth-mode .profile-top-btn,
+body.auth-mode .floating-nav,
+body.auth-mode .bottom-nav { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+body.auth-mode { padding-bottom: 0 !important; }
+body.auth-mode #app { padding-bottom: 24px !important; min-height:100vh; }
+body.auth-mode .auth-card { margin: 24px auto !important; }
 </style></head>
 <body><div class="bg"></div>
 <noscript><div style="position:relative;z-index:2;margin:16px;padding:16px;border-radius:20px;background:#fff;color:#0b2540;font:15px -apple-system,sans-serif"><b>Vista previa sin JavaScript.</b> Este visor no ejecuta la app: los botones no funcionan aquí. Abre el archivo en <b>Safari</b> (Compartir → Abrir en Safari) o usa el enlace publicado.</div></noscript>
@@ -535,6 +550,9 @@ function generateMioProfileId(){return 'MIO-'+Date.now().toString(36).toUpperCas
 function ensureMioProfileId(){if(!mioPendingProfileId)mioPendingProfileId=generateMioProfileId();return mioPendingProfileId}
 function authScreen(message='',kind='info'){
  document.body.classList.add('auth-mode');
+ document.getElementById('tabs')?.setAttribute('hidden','');
+ document.querySelectorAll('.search-dock,.search-toggle,#searchDock,#mioSearchDock,.floating-nav,.bottom-nav').forEach(el=>el.setAttribute('hidden',''));
+ document.getElementById('mioSearchOverlay')?.remove();
  const safeMsg=esc(message);
  $('#app').innerHTML=`<div class="glass auth-card"><div class="logo" style="font-size:42px">MIO</div><div class="slogan" style="margin-bottom:24px">Tus finanzas, tu control</div><h2>${authMode==='login'?'Iniciar sesión':'Crear cuenta'}</h2><p class="mut" style="margin-bottom:12px">${authMode==='login'?'Ingresa con tu correo y contraseña.':'Regístrate con tu nombre y apellido.'}</p><p id="authMessage" class="auth-message" role="status" aria-live="polite">${safeMsg}</p>${authMode==='signup'?`<label for="authFirstName">Nombre</label><input id="authFirstName" type="text" autocomplete="given-name" placeholder="Tu nombre" maxlength="60" required><label for="authLastName">Apellido</label><input id="authLastName" type="text" autocomplete="family-name" placeholder="Tu apellido" maxlength="60" required><label for="authCountry">País</label><input id="authCountry" type="text" autocomplete="country-name" placeholder="Ej. Colombia" maxlength="80" required><p class="auth-hint">La edad, el teléfono, la póliza y el lugar de residencia podrás completarlos después desde tu perfil. Tu ID se generará automáticamente.</p>`:''}<label>Correo electrónico</label><input id="authEmail" type="email" autocomplete="email" placeholder="tu@correo.com" maxlength="254" required><label>Contraseña ${authMode==='login'?'':'segura'}</label><input id="authPassword" type="password" autocomplete="${authMode==='login'?'current-password':'new-password'}" minlength="6" maxlength="8" inputmode="numeric" pattern="[0-9]{6,8}" placeholder="${authMode==='login'?'Contraseña de 6 a 8 números':'Crea una clave de 6 a 8 números'}" required oninput="this.value=this.value.replace(/\D/g,'').slice(0,8);checkPasswordStrength()">${authMode==='signup'?`<p class="auth-hint">Usa únicamente números: entre 6 y 8 dígitos. Evita fechas de nacimiento, números repetidos o secuencias como 123456.</p><p id="passwordStatus" class="auth-status mut" aria-live="polite">La clave debe tener entre 6 y 8 números.</p><label>Confirmar contraseña</label><input id="authPasswordConfirm" type="password" autocomplete="new-password" minlength="6" maxlength="8" inputmode="numeric" pattern="[0-9]{6,8}" placeholder="Repite los 6 a 8 números" oninput="this.value=this.value.replace(/\D/g,'').slice(0,8)" required>`:''}<button class="btn" id="authSubmit" style="margin-top:16px" onclick="submitAuth()">${authMode==='login'?'Iniciar sesión':'Crear cuenta'}</button><button class="btn s" style="margin-top:10px" onclick="toggleAuthMode()">${authMode==='login'?'No tengo cuenta · Registrarme':'Ya tengo cuenta · Iniciar sesión'}</button>${authMode==='login'?'<button class="btn s" style="margin-top:10px" onclick="resetAuthPassword()">Olvidé mi contraseña</button>':''}<p class="mut" style="margin-top:18px;font-size:12px">Tus movimientos todavía se guardan en este navegador y no se sincronizan con la nube.</p></div>`;
 }
@@ -572,7 +590,8 @@ async function saveProfileDetails(){
  try{const {data:updated,error}=await mioSupabase.auth.updateUser({data});if(error)throw error;mioUser=updated.user||mioUser;toast('Perfil actualizado correctamente');profileInfo()}catch(e){toast('No se pudieron guardar los cambios. '+(e?.message||'Inténtalo de nuevo.'))}finally{const b=$('#saveProfileDetails');if(b){b.disabled=false;b.textContent='Guardar cambios'}}
 }
 async function signOutMio(){const {error}=await mioSupabase.auth.signOut();if(error){toast('No se pudo cerrar sesión');return}mioUser=null;authScreen('Sesión cerrada.');}
-function renderMioAuthed(){try{document.body.classList.remove('auth-mode');document.getElementById('mioSessionBar')?.remove();render()}catch(e){showErr(e?.message||'No se pudo abrir MIO')}}
+function renderMioAuthed(){try{document.body.classList.remove('auth-mode');document.getElementById('tabs')?.removeAttribute('hidden');document.querySelectorAll('.search-dock,.search-toggle,#searchDock,#mioSearchDock,.floating-nav,.bottom-nav').forEach(el=>el.removeAttribute('hidden'));document.getElementById('mioSessionBar')?.remove();render()}catch(e){showErr(e?.message||'No se pudo abrir MIO')}}
 async function initMioAuth(){if(!window.supabase?.createClient){authScreen('No se pudo cargar el servicio de acceso. Revisa tu conexión e inténtalo de nuevo.');return}mioSupabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);mioSupabase.auth.onAuthStateChange((event,session)=>{mioUser=session?.user||null;if(event==='PASSWORD_RECOVERY'){passwordRecoveryScreen('Enlace verificado. Ahora puedes crear una contraseña nueva.');return}if(event==='SIGNED_OUT'){authScreen()}else if(event==='SIGNED_IN'&&mioUser){renderMioAuthed()}});const {data,error}=await mioSupabase.auth.getSession();if(error){authScreen('No se pudo comprobar la sesión. Recarga la página.');return}mioUser=data.session?.user||null;const hash=location.hash||'';const query=new URLSearchParams(location.search);if(/type=recovery/.test(hash)||query.get('type')==='recovery'){passwordRecoveryScreen('Verificando el enlace de recuperación…');return}if(mioUser)renderMioAuthed();else authScreen()}
+const mioAuthNavGuard=new MutationObserver(()=>{const isAuth=!!document.querySelector('#app .auth-card');if(isAuth){document.body.classList.add('auth-mode');const nav=document.getElementById('tabs');if(nav)nav.setAttribute('hidden','');document.querySelectorAll('.search-dock,.search-toggle,#searchDock,#mioSearchDock,.floating-nav,.bottom-nav').forEach(el=>el.setAttribute('hidden',''));}else if(mioUser){document.body.classList.remove('auth-mode');document.getElementById('tabs')?.removeAttribute('hidden');}});mioAuthNavGuard.observe(document.getElementById('app'),{childList:true,subtree:true});
 const savedTheme=localStorage.getItem('mio_theme');if(savedTheme&&savedTheme!=='auto')document.documentElement.setAttribute('data-theme',savedTheme);const savedTextScale=localStorage.getItem('mio_text_scale');if(savedTextScale)document.documentElement.style.setProperty('--text-scale',savedTextScale);document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});initMioAuth().catch(e=>{console.error(e);authScreen('No se pudo iniciar el acceso. Recarga la página.')});
 </script></body></html>
